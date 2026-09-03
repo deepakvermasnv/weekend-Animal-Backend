@@ -1,0 +1,90 @@
+datasource db {
+  provider = "mongodb"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model AdminUser {
+  id           String   @id @default(auto()) @map("_id") @db.ObjectId
+  email        String   @unique
+  passwordHash String
+  name         String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model Match {
+  id                String         @id @default(auto()) @map("_id") @db.ObjectId
+  title             String
+  date              DateTime
+  startTime         String
+  endTime           String
+  groundName        String
+  groundAddress     String
+  mapsUrl           String
+  fee               Float
+  maxPlayers        Int
+  description       String?
+  status            String         @default("REGISTRATION_OPEN") // UPCOMING, REGISTRATION_OPEN, FULL, REGISTRATION_CLOSED, COMPLETED, CANCELLED
+  registrationOpen  Boolean        @default(true)
+  isWaitlistEnabled Boolean        @default(true)
+  registrations     Registration[]
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime       @updatedAt
+}
+
+model Registration {
+  id             String    @id @default(auto()) @map("_id") @db.ObjectId
+  name           String
+  phone          String
+  area           String
+  skillLevel     String    @default("Intermediate")
+  battingBowling String    @default("All-Rounder")
+  matchId        String    @db.ObjectId
+  match          Match     @relation(fields: [matchId], references: [id], onDelete: Cascade)
+  status         String    @default("REGISTERED") // REGISTERED, CONFIRMED, CANCELLED, WAITLISTED
+  payment        Payment?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+}
+
+model Payment {
+  id             String       @id @default(auto()) @map("_id") @db.ObjectId
+  registrationId String       @unique @db.ObjectId
+  registration   Registration @relation(fields: [registrationId], references: [id], onDelete: Cascade)
+  amount         Float
+  status         String       @default("PENDING") // PENDING, PAID, REJECTED, REFUNDED
+  reference      String?
+  notes          String?
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+}
+
+model FAQ {
+  id           String   @id @default(auto()) @map("_id") @db.ObjectId
+  question     String
+  answer       String
+  displayOrder Int      @default(0)
+  published    Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model CommunityRule {
+  id           String   @id @default(auto()) @map("_id") @db.ObjectId
+  text         String
+  displayOrder Int      @default(0)
+  published    Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model SiteSetting {
+  id        String   @id @default(auto()) @map("_id") @db.ObjectId
+  key       String   @unique
+  value     String
+  updatedAt DateTime @updatedAt
+}
