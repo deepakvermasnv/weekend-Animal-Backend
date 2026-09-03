@@ -14,15 +14,29 @@ export async function login(req: Request, res: Response) {
       return res.status(400).json({ error: 'Email and password are required' });
     }
 
-    const admin = await prisma.adminUser.findUnique({
-      where: { email: email.toLowerCase().trim() },
+    const cleanEmail = String(email).toLowerCase().trim();
+
+    let admin = await prisma.adminUser.findUnique({
+      where: { email: cleanEmail },
     });
+
+    // Auto-seed default admin if database is unseeded or missing admin user
+    if (!admin && cleanEmail === 'admin@weekendcricket.com') {
+      const passwordHash = await bcrypt.hash('admin123', 10);
+      admin = await prisma.adminUser.create({
+        data: {
+          email: 'admin@weekendcricket.com',
+          passwordHash,
+          name: 'Community Admin',
+        },
+      });
+    }
 
     if (!admin) {
       return res.status(401).json({ error: 'Invalid email or password' });
     }
 
-    const isMatch = await bcrypt.compare(password, admin.passwordHash);
+    const isMatch = await bcrypt.compare(String(password), admin.passwordHash);
     if (!isMatch) {
       return res.status(401).json({ error: 'Invalid email or password' });
     }
@@ -45,7 +59,7 @@ export async function login(req: Request, res: Response) {
     });
   } catch (error: any) {
     console.error('Error during login:', error);
-    return res.status(500).json({ error: 'Login failed due to internal error' });
+    return res.status(500).json({ error: error?.message || 'Login failed due to internal error' });
   }
 }
 
