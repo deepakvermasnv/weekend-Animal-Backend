@@ -8,7 +8,7 @@ const defaultSettings: Record<string, string> = {
   communityName: 'Weekend Animal',
   communityDescription: 'Join our local weekend cricket community, meet new players and enjoy a game every weekend.',
   googleFormUrl: 'https://forms.google.com',
-  paymentQrCodeUrl: '/images/payment-qr.png',
+  paymentQrCodeUrl: '/images/Weekend-animal.jpg',
   upiId: 'weekendcricket@upi',
   paymentConfirmationUrl: 'https://wa.me/919876543210',
   whatsappGroupUrl: 'https://chat.whatsapp.com',
@@ -28,7 +28,11 @@ export async function getSettings(req: Request, res: Response) {
     const dbSettings = await prisma.siteSetting.findMany();
     const settingsMap = { ...defaultSettings };
     dbSettings.forEach((s) => {
-      settingsMap[s.key] = s.value;
+      if (s.key === 'paymentQrCodeUrl' && (s.value === '/images/payment-qr.png' || !s.value)) {
+        settingsMap[s.key] = '/images/Weekend-animal.jpg';
+      } else {
+        settingsMap[s.key] = s.value;
+      }
     });
 
     const responsePayload = { settings: settingsMap };
@@ -61,7 +65,11 @@ export async function updateSettings(req: Request, res: Response) {
     const updatedDbSettings = await prisma.siteSetting.findMany();
     const settingsMap = { ...defaultSettings };
     updatedDbSettings.forEach((s) => {
-      settingsMap[s.key] = s.value;
+      if (s.key === 'paymentQrCodeUrl' && (s.value === '/images/payment-qr.png' || !s.value)) {
+        settingsMap[s.key] = '/images/Weekend-animal.jpg';
+      } else {
+        settingsMap[s.key] = s.value;
+      }
     });
 
     apiCache.delete(SETTINGS_CACHE_KEY);

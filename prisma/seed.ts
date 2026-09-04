@@ -31,7 +31,7 @@ async function main() {
     { key: 'communityName', value: 'Weekend Animal' },
     { key: 'communityDescription', value: 'Join our local weekend cricket community, meet new players and enjoy a game every weekend.' },
     { key: 'googleFormUrl', value: 'https://forms.google.com' },
-    { key: 'paymentQrCodeUrl', value: '/images/payment-qr.png' },
+    { key: 'paymentQrCodeUrl', value: '/images/Weekend-animal.jpg' },
     { key: 'upiId', value: 'weekendcricket@upi' },
     { key: 'paymentConfirmationUrl', value: 'https://wa.me/919876543210' },
     { key: 'whatsappGroupUrl', value: 'https://chat.whatsapp.com' },
@@ -42,11 +42,14 @@ async function main() {
   ];
 
   for (const s of defaultSettings) {
-    await prisma.siteSetting.upsert({
-      where: { key: s.key },
-      update: {},
-      create: { key: s.key, value: s.value },
-    });
+    const existing = await prisma.siteSetting.findUnique({ where: { key: s.key } });
+    if (!existing || existing.value === '/images/payment-qr.png') {
+      await prisma.siteSetting.upsert({
+        where: { key: s.key },
+        update: { value: s.value },
+        create: { key: s.key, value: s.value },
+      });
+    }
   }
   console.log('Preserved site settings.');
 
