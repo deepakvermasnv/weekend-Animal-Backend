@@ -81,7 +81,7 @@ export async function createRegistration(req: Request, res: Response) {
 export async function updateRegistration(req: Request, res: Response) {
   const { id } = req.params;
   try {
-    const { status, name, phone, area, skillLevel, battingBowling, paymentStatus, reference, notes } = req.body;
+    const { status, name, phone, area, skillLevel, battingBowling, matchId, paymentStatus, reference, notes, amount } = req.body;
 
     const existingRegistration = await prisma.registration.findUnique({
       where: { id },
@@ -101,23 +101,33 @@ export async function updateRegistration(req: Request, res: Response) {
         area: area !== undefined ? String(area).trim() : undefined,
         skillLevel: skillLevel || undefined,
         battingBowling: battingBowling || undefined,
+        matchId: matchId || undefined,
       },
     });
 
-    if (paymentStatus || reference !== undefined || notes !== undefined) {
+    if (paymentStatus || reference !== undefined || notes !== undefined || amount !== undefined) {
       if (existingRegistration.payment) {
         await prisma.payment.update({
           where: { registrationId: id },
           data: {
             status: paymentStatus || undefined,
-            reference: reference !== undefined ? reference : undefined,
-            notes: notes !== undefined ? notes : undefined,
+            reference: reference !== undefined ? String(reference).trim() : undefined,
+            notes: notes !== undefined ? String(notes).trim() : undefined,
+            amount: amount !== undefined && !isNaN(Number(amount)) ? Number(amount) : undefined,
           },
         });
       }
     }
 
-    return res.json({ success: true, registration: updatedRegistration });
+    const refreshed = await prisma.registration.findUnique({
+      where: { id },
+      include: {
+        match: true,
+        payment: true,
+      },
+    });
+
+    return res.json({ success: true, registration: refreshed });
   } catch (error: any) {
     console.error('Error updating registration:', error);
     return res.status(500).json({ error: error?.message || 'Failed to update registration' });
